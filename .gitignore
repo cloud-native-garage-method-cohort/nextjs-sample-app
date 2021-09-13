@@ -3,7 +3,7 @@
 # secret
 
 frederic-dutheil-fr-fdutbot-secret.yml
-
+git-credential.yaml
 
 # dependencies
 /node_modules
