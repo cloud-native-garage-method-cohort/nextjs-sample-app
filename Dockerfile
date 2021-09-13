@@ -1,25 +1,41 @@
-# Use node Docker image, version 16-alpine
-FROM quay.io/ibmgaragecloud/node:lts-stretch
+# Install dependencies only when needed
+FROM node:14-alpine AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json ./
+RUN yarn install --frozen-lockfile
 
-# From the documentation, "The WORKDIR instruction sets the working directory for any
-# RUN, CMD, ENTRYPOINT, COPY and ADD instructions that follow it in the Dockerfile"
-WORKDIR /usr/src/app
-
-# COPY package.json and package-lock.json into root of WORKDIR
-COPY package*.json ./
-
-# Executes commands
-RUN npm install
-
-# Copies files from source to destination, in this case the root of the build context
-# into the root of the WORKDIR
+# Rebuild the source code only when needed
+FROM node:14-alpine AS builder
+WORKDIR /app
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+RUN yarn build
 
-# Building app
-RUN npm run build
+# Production image, copy all the files and run next
+FROM node:14-alpine AS runner
+WORKDIR /app
 
-# Document that this container exposes something on port 3000
+ENV NODE_ENV production
+
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# You only need to copy next.config.js if you are NOT using the default configuration
+# COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+USER nextjs
+
 EXPOSE 3000
 
-# Command to use for starting the application
-CMD "npm" "run" "dev"
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry.
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+CMD ["yarn", "start"]
