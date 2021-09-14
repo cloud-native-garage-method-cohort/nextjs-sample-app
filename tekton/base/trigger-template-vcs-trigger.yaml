@@ -7,10 +7,10 @@ spec:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
-        generateName: another-sample-app-pipeline-
+        generateName: nextjs-sample-app-pipeline-
       spec:
         pipelineRef:
-          name: another-app-pipeline
+          name: nextjs-sample-app
         serviceAccountName: build-bot
         params:
           - name: app-name
