@@ -14,7 +14,7 @@ spec:
         serviceAccountName: build-bot
         params:
           - name: app-name
-            value: another-sample-app
+            value: nextjs-sample-app
           - name: source-repo
             value: https://github.com/cloud-native-garage-method-cohort/nextjs-sample-app-fred
           - name: image-repo
